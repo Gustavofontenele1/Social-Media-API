@@ -2,28 +2,31 @@ const express = require('express');
 const router = express.Router();
 const Message = require('../models/Message');
 
-// Enviar uma mensagem
 router.post('/', async (req, res) => {
   const { senderId, receiverId, content } = req.body;
+
   try {
-    const newMessage = new Message({ senderId, receiverId, content });
-    await newMessage.save();
-    res.status(201).json(newMessage);
+    const message = new Message({
+      senderId,
+      receiverId,
+      content
+    });
+    await message.save();
+    res.status(201).json(message);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Obter mensagens entre dois usuários
-router.get('/:userId1/:userId2', async (req, res) => {
-  const { userId1, userId2 } = req.params;
+router.get('/:userId', async (req, res) => {
   try {
     const messages = await Message.find({
       $or: [
-        { senderId: userId1, receiverId: userId2 },
-        { senderId: userId2, receiverId: userId1 }
+        { senderId: req.params.userId },
+        { receiverId: req.params.userId }
       ]
-    });
+    }).populate('senderId receiverId', 'username');
+
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: err.message });

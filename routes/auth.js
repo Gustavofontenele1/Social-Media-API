@@ -1,12 +1,11 @@
-// src/routes/auth.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const User = require('../models/User'); // Certifique-se de que o caminho está correto
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
-// Obter todos os usuários (GET)
-router.get("/users", async (req, res) => {
+// Rota para obter todos os usuários
+router.get('/users', async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);

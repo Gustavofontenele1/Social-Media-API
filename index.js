@@ -21,8 +21,12 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // Rotas
-app.use('/api/auth', require('./routes/auth')); // Certifique-se de que o caminho está correto
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/user', require('./routes/user'));
+app.use('/api/post', require('./routes/post'));
+app.use('/api/messenger', require('./routes/messenger'));
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
+
