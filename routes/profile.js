@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// Obter perfil do usuário
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
   try {
@@ -14,7 +13,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Atualizar perfil do usuário
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
   const { profilePicture } = req.body;

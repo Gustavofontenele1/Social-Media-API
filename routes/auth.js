@@ -1,11 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/User'); // Certifique-se de que o caminho está correto
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const sendVerificationEmail = require("../models/emailService");
+const crypto = require("crypto");
 
-// Rota para obter todos os usuários
-router.get('/users', async (req, res) => {
+router.get("/users", async (req, res) => {
   try {
     const users = await User.find();
     res.json(users);
@@ -14,30 +15,58 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Criar um novo usuário (POST)
 router.post("/register", async (req, res) => {
   const { username, email, password } = req.body;
-
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
 
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: "Email is already registered" });
+      return res.status(400).json({ message: "E-mail já cadastrado!" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: hashedPassword });
-    await newUser.save();
-    res.status(201).json({ message: "User created successfully" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const verificationCode = crypto.randomInt(100000, 999999).toString();
+    const user = new User({
+      username,
+      email,
+      password,
+      verificationCode,
+      verified: false,
+    });
+    await user.save();
+    const emailSent = await sendVerificationEmail(email, verificationCode);
+    if (!emailSent)
+      return res.status(500).json({ message: "Erro ao enviar e-mail" });
+
+    res.status(200).json({ message: "Código enviado para o e-mail!" });
+  } catch (error) {
+    console.error("Erro ao cadastrar usuário:", error);
+    res.status(500).json({ message: "Erro ao cadastrar usuário" });
   }
 });
 
-// Login do usuário (POST)
+router.post("/verify-email", async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user)
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    if (user.verified)
+      return res.status(400).json({ message: "Usuário já verificado" });
+
+    if (user.verificationCode === code) {
+      user.verified = true;
+      await user.save();
+      res.status(200).json({ message: "Conta verificada com sucesso!" });
+    } else {
+      res.status(400).json({ message: "Código inválido" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao verificar código" });
+  }
+});
+
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -65,7 +94,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Excluir um usuário por ID (DELETE)
 router.delete("/users/:id", async (req, res) => {
   const { id } = req.params;
 
