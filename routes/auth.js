@@ -5,6 +5,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const sendVerificationEmail = require("../services/emailService");
 const crypto = require("crypto");
+const saltRounds = 10;
 
 router.get("/users", async (req, res) => {
   try {
@@ -18,24 +19,36 @@ router.get("/users", async (req, res) => {
 router.post("/register", async (req, res) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email e senha são obrigatórios" });
+  }
+
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: "Email já cadastrado" });
+      return res.status(400).json({ error: "Este email já está registrado" });
     }
 
-    const verificationCode = crypto.randomBytes(16).toString("hex");
-    const user = new User({ email, password, verificationCode });
-    await user.save();
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
 
+    const verificationCode = crypto.randomBytes(16).toString("hex");
+
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      verificationCode,
+    });
+
+    await newUser.save();
     await sendVerificationEmail(email, verificationCode);
 
-    res
-      .status(200)
-      .json({ message: "Verifique seu e-mail para o código de verificação" });
-  } catch (error) {
-    console.error("Erro ao cadastrar usuário:", error);
-    res.status(500).json({ error: "Erro ao cadastrar usuário" });
+    res.status(201).json({
+      message:
+        "Usuário criado com sucesso. Verifique seu e-mail para o código de verificação.",
+    });
+  } catch (err) {
+    console.error("Erro ao criar usuário:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -98,11 +111,13 @@ router.post("/login", async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
+
     if (!user) {
       return res.status(400).json({ error: "Email ou senha inválidos" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
+
     if (!isMatch) {
       return res.status(400).json({ error: "Email ou senha inválidos" });
     }
@@ -110,6 +125,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
+
     res.json({ token });
   } catch (err) {
     res.status(500).json({ error: err.message });
