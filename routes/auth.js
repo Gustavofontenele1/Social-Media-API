@@ -17,10 +17,10 @@ router.get("/users", async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, username } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email e senha são obrigatórios" });
+  if (!email || !password || !username) {
+    return res.status(400).json({ error: "Email, senha e nome de usuário são obrigatórios" });
   }
 
   try {
@@ -31,12 +31,13 @@ router.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-    const verificationCode = crypto.randomBytes(16).toString("hex");
+    const verificationCode = crypto.randomBytes(3).toString("hex");
 
     const newUser = new User({
       email,
       password: hashedPassword,
       verificationCode,
+      username,
     });
 
     await newUser.save();
