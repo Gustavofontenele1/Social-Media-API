@@ -12,21 +12,21 @@ const transporter = nodemailer.createTransport({
 
 
 async function sendVerificationEmail(email, verificationToken) {
-
-  let frontendUrl = process.env.FRONTEND_URL;
-
-  if (frontendUrl.endsWith("/")) {
-    frontendUrl = frontendUrl.slice(0, -1);
-  }
-
-  console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-
-
-  const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
-
-  console.log("Link gerado:", verificationUrl);
-
   try {
+    let frontendUrl = process.env.FRONTEND_URL || "";
+
+    if (!frontendUrl) {
+      throw new Error("FRONTEND_URL não está definida nas variáveis de ambiente.");
+    }
+
+    if (frontendUrl.endsWith("/")) {
+      frontendUrl = frontendUrl.slice(0, -1);
+    }
+
+    const tokenOnly = verificationToken.replace(frontendUrl, "").replace("/verify/", "");
+
+    const verificationUrl = `${frontendUrl}/verify/${tokenOnly}`;
+
     await transporter.sendMail({
       from: '"StreamHub" <no-reply@streamhub.com>',
       to: email,
