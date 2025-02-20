@@ -85,16 +85,15 @@ router.post("/verify", async (req, res) => {
       return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
-    const expirationTime = 60 * 60 * 1000;
-    const currentTime = Date.now();
+    const currentTime = new Date();
 
-    if (currentTime > user.verificationTokenExpiration) {
+    if (currentTime > user.verificationTokenExpiry) {
       return res.status(400).json({ message: "O link de ativação expirou." });
     }
 
     user.isVerified = true;
     user.verificationToken = null;
-    user.verificationTokenExpiration = null;
+    user.verificationTokenExpiry = null;
     await user.save();
 
     res.status(200).json({ message: "Conta ativada com sucesso!" });
@@ -178,7 +177,7 @@ router.post("/forgot-password", async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetTokenExpiration = Date.now() + 3600000; // 1 hora
+    const resetTokenExpiration = Date.now() + 3600000;
 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = resetTokenExpiration;
