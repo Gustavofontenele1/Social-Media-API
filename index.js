@@ -7,10 +7,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const corsOptions = {
-  origin:
-    "https://social-network-frontend-133q8fgv0-gustavo-fonteneles-projects.vercel.app",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: 'https://social-network-frontend-theta.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 };
 
 app.use(cors(corsOptions));
