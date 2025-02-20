@@ -84,7 +84,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-
 router.post("/resend-verification", async (req, res) => {
   const { email } = req.body;
 
@@ -123,21 +122,23 @@ router.post("/verify", async (req, res) => {
       return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
-    const currentTime = new Date();
+    const currentTime = Date.now();
 
     if (currentTime > user.verificationTokenExpiry) {
       return res.status(400).json({ message: "O link de ativação expirou." });
     }
 
     user.isVerified = true;
-    user.verificationToken = null;
-    user.verificationTokenExpiry = null;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
     await user.save();
 
     res.status(200).json({ message: "Conta ativada com sucesso!" });
   } catch (err) {
     console.error("Erro ao verificar o token:", err);
-    res.status(500).json({ message: "Erro ao ativar a conta." });
+    res
+      .status(500)
+      .json({ message: "Erro ao ativar a conta. Tente novamente." });
   }
 });
 
