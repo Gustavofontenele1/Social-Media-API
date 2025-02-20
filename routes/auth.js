@@ -28,22 +28,22 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "Este e-mail já está registrado." });
     }
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationTokenExpiry = Date.now() + 3600000; 
+
     const newUser = new User({
       email,
       username,
       password,
       isVerified: false,
-      verificationToken: crypto.randomBytes(32).toString("hex"),
-      verificationTokenExpiry: Date.now() + 3600000,
+      verificationToken,
+      verificationTokenExpiry, 
     });
 
-    const baseUrl = process.env.FRONTEND_URL.endsWith("/")
-      ? process.env.FRONTEND_URL
-      : `${process.env.FRONTEND_URL}/`;
+    await newUser.save(); 
 
-    const verificationUrl = `${baseUrl}verify/${newUser.verificationToken}`;
-
-    await sendVerificationEmail(email, verificationUrl);
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    await sendVerificationEmail(email, verificationUrl); 
 
     console.log("Usuário registrado, aguardando verificação do e-mail.");
     res.status(200).json({
@@ -122,9 +122,7 @@ router.get("/verify/:token", async (req, res) => {
     }
 
     if (Date.now() > user.verificationTokenExpiry) {
-      return res
-        .status(400)
-        .json({ error: "Token expirado. Solicite um novo link." });
+      return res.status(400).json({ error: "Token expirado. Solicite um novo link." });
     }
 
     user.isVerified = true;
@@ -136,6 +134,7 @@ router.get("/verify/:token", async (req, res) => {
       message: "Conta verificada com sucesso! Agora você pode fazer login.",
     });
   } catch (err) {
+    console.error("Erro ao verificar o token:", err);
     res.status(500).json({ error: "Erro ao verificar a conta." });
   }
 });
