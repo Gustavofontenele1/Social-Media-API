@@ -15,7 +15,7 @@ async function sendVerificationEmail(email, verificationToken) {
     frontendUrl = frontendUrl.slice(0, -1);
   }
 
-  const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
+  const verificationUrl = `/verify/${verificationToken}`;
 
   try {
     await transporter.sendMail({
