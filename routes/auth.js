@@ -133,6 +133,72 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "O email é obrigatório" });
+  }
+
+  try {
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado" });
+    }
+
+    const resetToken = crypto.randomBytes(20).toString("hex");
+    const resetTokenExpiration = Date.now() + 3600000; // 1 hora
+
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiration;
+
+    await user.save();
+
+    const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    await sendResetPasswordEmail(user.email, resetPasswordUrl);
+
+    res.status(200).json({ message: "E-mail de redefinição de senha enviado." });
+  } catch (err) {
+    console.error("Erro ao solicitar redefinição de senha:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token e nova senha são obrigatórios" });
+  }
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: "Token inválido ou expirado" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Senha redefinida com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao redefinir a senha:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 router.delete("/users/:id", async (req, res) => {
   const { id } = req.params;
 
