@@ -37,7 +37,11 @@ router.post("/register", async (req, res) => {
       verificationTokenExpiry: Date.now() + 3600000,
     });
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${newUser.verificationToken}`;
+    const baseUrl = process.env.FRONTEND_URL.endsWith("/")
+      ? process.env.FRONTEND_URL
+      : `${process.env.FRONTEND_URL}/`;
+
+    const verificationUrl = `${baseUrl}verify/${newUser.verificationToken}`;
 
     await sendVerificationEmail(email, verificationUrl);
 
@@ -68,7 +72,11 @@ router.post("/resend-verification", async (req, res) => {
 
   await user.save();
 
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify/${user.verificationToken}`;
+  const baseUrl = process.env.FRONTEND_URL.endsWith("/")
+  ? process.env.FRONTEND_URL
+  : `${process.env.FRONTEND_URL}/`;
+
+const verificationUrl = `${baseUrl}verify/${newUser.verificationToken}`;
 
   await sendVerificationEmail(user.email, verificationUrl);
 
