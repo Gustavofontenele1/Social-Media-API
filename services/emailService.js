@@ -20,9 +20,11 @@ async function sendVerificationEmail(email, verificationToken) {
   }
 
   console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-  console.log("Link gerado:", verificationUrl);
+
 
   const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
+
+  console.log("Link gerado:", verificationUrl);
 
   try {
     await transporter.sendMail({
