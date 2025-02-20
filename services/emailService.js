@@ -12,14 +12,15 @@ const transporter = nodemailer.createTransport({
 
 
 async function sendVerificationEmail(email, verificationToken) {
-  console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-  console.log("Link gerado:", verificationUrl);
 
   let frontendUrl = process.env.FRONTEND_URL;
 
   if (frontendUrl.endsWith("/")) {
     frontendUrl = frontendUrl.slice(0, -1);
   }
+
+  console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+  console.log("Link gerado:", verificationUrl);
 
   const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
 
