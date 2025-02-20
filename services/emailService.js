@@ -9,7 +9,13 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendVerificationEmail(email, verificationToken) {
-  const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+  let frontendUrl = process.env.FRONTEND_URL;
+
+  if (frontendUrl.endsWith("/")) {
+    frontendUrl = frontendUrl.slice(0, -1);
+  }
+
+  const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
 
   try {
     await transporter.sendMail({
@@ -22,8 +28,6 @@ async function sendVerificationEmail(email, verificationToken) {
         <p style="font-size: 18px;">Para concluir seu cadastro, clique no link de ativação abaixo:</p>
         <a href="${verificationUrl}" style="font-size: 18px; color: #22c55e; text-decoration: none; font-weight: bold;">Ativar Conta</a>
         <p style="font-size: 16px; color: #666;">Este link expira em 1 hora. Se você não solicitou a ativação, por favor, ignore este e-mail.</p>
-        <hr style="border-top: 2px solid #e5e7eb;" />
-        <p style="font-size: 14px; color: #888;">Se você não solicitou este cadastro, por favor, ignore este e-mail.</p>
       `,
     });
     console.log("E-mail enviado para:", email);
