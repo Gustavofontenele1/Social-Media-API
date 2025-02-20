@@ -50,6 +50,7 @@ router.post("/register", async (req, res) => {
       isVerified: false,
       verificationToken,
       verificationTokenExpiry,
+      isEmailSent: false,
     });
 
     await newUser.save();
@@ -61,6 +62,9 @@ router.post("/register", async (req, res) => {
     const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
 
     await sendVerificationEmail(email, verificationUrl);
+
+    newUser.isEmailSent = true;
+    await newUser.save();
 
     console.log("Usuário registrado, aguardando verificação do e-mail.");
     res.status(200).json({
@@ -79,6 +83,7 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ error: "Erro ao cadastrar usuário." });
   }
 });
+
 
 router.post("/resend-verification", async (req, res) => {
   const { email } = req.body;
