@@ -114,24 +114,28 @@ router.post("/resend-verification", async (req, res) => {
 
 router.post("/verify", async (req, res) => {
   const { token } = req.body;
+  console.log("Token recebido para verificação:", token);
 
   try {
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
+      console.log("Token inválido ou expirado, usuário não encontrado.");
       return res.status(400).json({ message: "Token inválido ou expirado." });
     }
+    console.log("Usuário encontrado:", user);
 
     const currentTime = Date.now();
-
     if (currentTime > user.verificationTokenExpiry) {
+      console.log("Token expirado.");
       return res.status(400).json({ message: "O link de ativação expirou." });
     }
 
     user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpiry = undefined;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
     await user.save();
+    console.log("Conta ativada com sucesso!");
 
     res.status(200).json({ message: "Conta ativada com sucesso!" });
   } catch (err) {
