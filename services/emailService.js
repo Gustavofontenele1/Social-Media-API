@@ -8,7 +8,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
+
+
 async function sendVerificationEmail(email, verificationToken) {
+  console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
+  console.log("Link gerado:", verificationUrl);
+
   let frontendUrl = process.env.FRONTEND_URL;
 
   if (frontendUrl.endsWith("/")) {
@@ -37,27 +43,27 @@ async function sendVerificationEmail(email, verificationToken) {
   }
 }
 
-async function sendResetPasswordEmail(email, resetPasswordUrl) {
-  try {
-    // Gerar código de redefinição de 6 dígitos
+async function sendResetPasswordEmail(email) {
+  try {s
     const resetCode = Math.floor(100000 + Math.random() * 900000);
 
     await transporter.sendMail({
       from: '"StreamHub" <no-reply@streamhub.com>',
       to: email,
-      subject: "🔒 Redefinição de Senha - StreamHub",
-      text: `Olá, tudo bem? 👋\n\nVocê solicitou a redefinição de sua senha. Clique no link abaixo para redefinir sua senha:\n\n${resetPasswordUrl}\n\nSe você não solicitou essa redefinição, ignore este e-mail.`,
+      subject: "🔒 Código de Redefinição de Senha - StreamHub",
+      text: `Olá, tudo bem? 👋\n\nVocê solicitou a redefinição de sua senha.\n\nSeu código de verificação é: ${resetCode}\n\nSe você não solicitou essa redefinição, ignore este e-mail.`,
       html: `
         <h2 style="color: #3b82f6;">Olá, tudo bem? 👋</h2>
-        <p style="font-size: 18px;">Você solicitou a redefinição de sua senha. Clique no link abaixo para redefinir sua senha:</p>
-        <a href="${resetPasswordUrl}" style="font-size: 18px; color: #22c55e; text-decoration: none; font-weight: bold;">Redefinir Senha</a>
+        <p style="font-size: 18px;">Você solicitou a redefinição de sua senha.</p>
+        <p style="font-size: 18px; font-weight: bold; color: #22c55e;">Seu código de verificação: ${resetCode}</p>
         <p style="font-size: 16px; color: #666;">Se você não solicitou essa redefinição, ignore este e-mail.</p>
         <hr style="border-top: 2px solid #e5e7eb;" />
-        <p style="font-size: 14px; color: #888;">Se você não solicitou essa redefinição de senha, por favor, ignore este e-mail.</p>
+        <p style="font-size: 14px; color: #888;">Este código é válido por um tempo limitado.</p>
       `,
     });
 
     console.log("E-mail de redefinição de senha enviado para:", email);
+    return resetCode;
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
     throw new Error("Erro ao enviar e-mail");
