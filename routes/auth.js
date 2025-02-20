@@ -43,10 +43,12 @@ router.post("/register", async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = Date.now() + 3600000;
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = new User({
       email,
       username,
-      password,
+      password: hashedPassword,
       isVerified: false,
       verificationToken,
       verificationTokenExpiry,
@@ -56,9 +58,7 @@ router.post("/register", async (req, res) => {
     await newUser.save();
 
     let frontendUrl = process.env.FRONTEND_URL;
-    if (frontendUrl.endsWith("/")) {
-      frontendUrl = frontendUrl.slice(0, -1);
-    }
+
     const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
 
     await sendVerificationEmail(email, verificationUrl);
@@ -177,30 +177,27 @@ router.get("/verify/:token", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email e senha são obrigatórios" });
-  }
-
   try {
     const user = await User.findOne({ email });
-
     if (!user) {
-      return res.status(400).json({ error: "Email ou senha inválidos" });
+      return res.status(400).json({ message: 'Credenciais inválidas' });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ error: "Email ou senha inválidos" });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: 'Credenciais inválidas' });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    if (!user.isVerified) {
+      return res.status(400).json({ message: 'Conta não verificada. Verifique seu e-mail.' });
+    }
 
-    res.json({ token });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.status(200).json({ token });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ message: 'Erro interno. Tente novamente.' });
   }
 });
 
