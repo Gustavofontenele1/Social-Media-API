@@ -3,7 +3,10 @@ const router = express.Router();
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const sendVerificationEmail = require("../services/emailService");
+const sendVerificationEmail =
+  require("../services/emailService").sendVerificationEmail;
+const sendResetPasswordEmail =
+  require("../services/emailService").sendResetPasswordEmail;
 const crypto = require("crypto");
 const saltRounds = 10;
 
@@ -20,7 +23,9 @@ router.post("/register", async (req, res) => {
   const { email, password, username } = req.body;
 
   if (!email || !password || !username) {
-    return res.status(400).json({ error: "Email, senha e nome de usuário são obrigatórios" });
+    return res
+      .status(400)
+      .json({ error: "Email, senha e nome de usuário são obrigatórios" });
   }
 
   try {
@@ -72,33 +77,6 @@ router.post("/verify", async (req, res) => {
     res.status(200).json({ message: "Usuário verificado com sucesso!" });
   } catch (error) {
     console.error("Erro ao verificar código:", error);
-    res.status(500).json({ error: "Erro ao verificar código" });
-  }
-});
-
-router.post("/verify-email", async (req, res) => {
-  const { email, code } = req.body;
-
-  try {
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ error: "Usuário já verificado" });
-    }
-
-    if (user.verificationCode === code) {
-      user.isVerified = true;
-      user.verificationCode = null;
-      await user.save();
-      res.status(200).json({ message: "Conta verificada com sucesso!" });
-    } else {
-      res.status(400).json({ error: "Código inválido" });
-    }
-  } catch (error) {
     res.status(500).json({ error: "Erro ao verificar código" });
   }
 });
@@ -158,7 +136,9 @@ router.post("/forgot-password", async (req, res) => {
     const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
     await sendResetPasswordEmail(user.email, resetPasswordUrl);
 
-    res.status(200).json({ message: "E-mail de redefinição de senha enviado." });
+    res
+      .status(200)
+      .json({ message: "E-mail de redefinição de senha enviado." });
   } catch (err) {
     console.error("Erro ao solicitar redefinição de senha:", err);
     res.status(500).json({ error: err.message });
@@ -169,7 +149,9 @@ router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
   if (!token || !newPassword) {
-    return res.status(400).json({ error: "Token e nova senha são obrigatórios" });
+    return res
+      .status(400)
+      .json({ error: "Token e nova senha são obrigatórios" });
   }
 
   try {
@@ -196,8 +178,6 @@ router.post("/reset-password", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 router.delete("/users/:id", async (req, res) => {
   const { id } = req.params;
