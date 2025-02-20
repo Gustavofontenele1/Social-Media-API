@@ -24,8 +24,20 @@ router.post("/register", async (req, res) => {
     const { email, username, password } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+
+    if (existingUser && existingUser.isVerified) {
       return res.status(400).json({ error: "Este e-mail já está registrado." });
+    }
+
+    if (existingUser && !existingUser.isVerified) {
+      const currentTime = Date.now();
+      if (currentTime > existingUser.verificationTokenExpiry) {
+        await User.deleteOne({ email });
+      } else {
+        return res.status(400).json({
+          error: "E-mail já cadastrado. Verifique sua caixa de entrada.",
+        });
+      }
     }
 
     const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -46,15 +58,22 @@ router.post("/register", async (req, res) => {
     if (frontendUrl.endsWith("/")) {
       frontendUrl = frontendUrl.slice(0, -1);
     }
-
     const verificationUrl = `${frontendUrl}/verify/${verificationToken}`;
 
-    await sendVerificationEmail(email, verificationUrl); 
+    await sendVerificationEmail(email, verificationUrl);
 
     console.log("Usuário registrado, aguardando verificação do e-mail.");
     res.status(200).json({
       message: "Cadastro realizado com sucesso! Verifique seu e-mail.",
     });
+
+    setTimeout(async () => {
+      const user = await User.findOne({ email });
+      if (user && !user.isVerified) {
+        await User.deleteOne({ email });
+        console.log(`Usuário ${email} removido por falta de verificação.`);
+      }
+    }, 3600000);
   } catch (error) {
     console.error("Erro ao registrar o usuário:", error);
     res.status(500).json({ error: "Erro ao cadastrar usuário." });
@@ -82,7 +101,7 @@ router.post("/resend-verification", async (req, res) => {
     ? process.env.FRONTEND_URL
     : `${process.env.FRONTEND_URL}/`;
 
-  const verificationUrl = `${baseUrl}verify/${newUser.verificationToken}`;
+  const verificationUrl = `${baseUrl}verify/${user.verificationToken}`;
 
   await sendVerificationEmail(user.email, verificationUrl);
 
