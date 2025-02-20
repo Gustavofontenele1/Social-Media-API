@@ -22,40 +22,76 @@ router.get("/users", async (req, res) => {
 router.post("/register", async (req, res) => {
   const { email, password, username } = req.body;
 
-  if (!email || !password || !username) {
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
     return res
       .status(400)
-      .json({ error: "Email, senha e nome de usuário são obrigatórios" });
+      .json({ message: "Já existe uma conta com esse e-mail." });
+  }
+
+  const existingUsername = await User.findOne({ username });
+  if (existingUsername) {
+    return res.status(400).json({ message: "Nome de usuário já está em uso." });
   }
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: "Este email já está registrado" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-    const verificationCode = crypto.randomBytes(3).toString("hex");
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
     const newUser = new User({
       email,
       password: hashedPassword,
-      verificationCode,
       username,
+      verificationCode,
+      isVerified: false,
+      isEmailSent: true, // Marca que o e-mail foi enviado
     });
 
     await newUser.save();
     await sendVerificationEmail(email, verificationCode);
 
-    res.status(201).json({
-      message:
-        "Usuário criado com sucesso. Verifique seu e-mail para o código de verificação.",
-    });
-  } catch (err) {
-    console.error("Erro ao criar usuário:", err);
-    res.status(500).json({ error: err.message });
+    res
+      .status(200)
+      .json({
+        message:
+          "Cadastro realizado! Verifique seu e-mail para o código de verificação.",
+      });
+  } catch (error) {
+    console.error("Erro ao criar o usuário:", error);
+    res
+      .status(500)
+      .json({
+        message: "Erro ao tentar se cadastrar. Tente novamente mais tarde.",
+      });
   }
+});
+
+router.post("/resend-verification", async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user || user.isVerified) {
+    return res
+      .status(400)
+      .json({ message: "Este e-mail já está verificado ou não existe." });
+  }
+
+  if (!user.isEmailSent) {
+    return res
+      .status(400)
+      .json({ message: "O código de verificação ainda não foi enviado." });
+  }
+
+  const verificationCode = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+  user.verificationCode = verificationCode;
+  await user.save();
+
+  await sendVerificationEmail(user.email, verificationCode);
+  res.status(200).json({ message: "Novo código de verificação enviado!" });
 });
 
 router.post("/verify", async (req, res) => {
@@ -67,7 +103,17 @@ router.post("/verify", async (req, res) => {
     if (!user) {
       return res
         .status(400)
-        .json({ error: "Código de verificação inválido ou expirado" });
+        .json({ error: "Código de verificação inválido ou expirado." });
+    }
+
+    const verificationCodeExpiration = 60 * 60 * 1000;
+    const currentTime = new Date().getTime();
+    const timeDifference = currentTime - new Date(user.createdAt).getTime();
+
+    if (timeDifference > verificationCodeExpiration) {
+      return res
+        .status(400)
+        .json({ error: "O código de verificação expirou. Solicite um novo." });
     }
 
     user.isVerified = true;
@@ -77,7 +123,9 @@ router.post("/verify", async (req, res) => {
     res.status(200).json({ message: "Usuário verificado com sucesso!" });
   } catch (error) {
     console.error("Erro ao verificar código:", error);
-    res.status(500).json({ error: "Erro ao verificar código" });
+    res
+      .status(500)
+      .json({ error: "Erro ao verificar código. Tente novamente." });
   }
 });
 
