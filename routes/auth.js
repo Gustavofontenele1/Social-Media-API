@@ -24,7 +24,9 @@ router.post("/register", async (req, res) => {
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res.status(400).json({ message: "Já existe uma conta com esse e-mail." });
+    return res
+      .status(400)
+      .json({ message: "Já existe uma conta com esse e-mail." });
   }
 
   const existingUsername = await User.findOne({ username });
@@ -52,10 +54,15 @@ router.post("/register", async (req, res) => {
     await sendVerificationEmail(email, verificationUrl);
 
     res.status(200).json({
-      message: "Cadastro realizado! Verifique seu e-mail para o link de verificação.",
+      message:
+        "Cadastro realizado! Verifique seu e-mail para o link de verificação.",
     });
   } catch (error) {
-    res.status(500).json({ message: "Erro ao tentar se cadastrar. Tente novamente mais tarde." });
+    res
+      .status(500)
+      .json({
+        message: "Erro ao tentar se cadastrar. Tente novamente mais tarde.",
+      });
   }
 });
 
@@ -86,37 +93,31 @@ router.post("/resend-verification", async (req, res) => {
 });
 
 router.post("/verify", async (req, res) => {
-  const { email, verificationCode } = req.body;
+  const { token } = req.body;
 
   try {
-    const user = await User.findOne({ email, verificationCode });
+    const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
-      return res
-        .status(400)
-        .json({ error: "Código de verificação inválido ou expirado." });
+      return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
-    const verificationCodeExpiration = 60 * 60 * 1000;
-    const currentTime = new Date().getTime();
-    const timeDifference = currentTime - new Date(user.createdAt).getTime();
+    const expirationTime = 60 * 60 * 1000;
+    const currentTime = Date.now();
 
-    if (timeDifference > verificationCodeExpiration) {
-      return res
-        .status(400)
-        .json({ error: "O código de verificação expirou. Solicite um novo." });
+    if (currentTime > user.verificationTokenExpiration) {
+      return res.status(400).json({ message: "O link de ativação expirou." });
     }
 
     user.isVerified = true;
-    user.verificationCode = null;
+    user.verificationToken = null;
+    user.verificationTokenExpiration = null;
     await user.save();
 
-    res.status(200).json({ message: "Usuário verificado com sucesso!" });
-  } catch (error) {
-    console.error("Erro ao verificar código:", error);
-    res
-      .status(500)
-      .json({ error: "Erro ao verificar código. Tente novamente." });
+    res.status(200).json({ message: "Conta ativada com sucesso!" });
+  } catch (err) {
+    console.error("Erro ao verificar o token:", err);
+    res.status(500).json({ message: "Erro ao ativar a conta." });
   }
 });
 
@@ -131,7 +132,9 @@ router.get("/verify/:token", async (req, res) => {
     }
 
     if (Date.now() > user.verificationTokenExpiry) {
-      return res.status(400).json({ error: "Token expirado. Solicite um novo link." });
+      return res
+        .status(400)
+        .json({ error: "Token expirado. Solicite um novo link." });
     }
 
     user.isVerified = true;
@@ -151,7 +154,9 @@ router.post("/resend-verification", async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user || user.isVerified) {
-    return res.status(400).json({ message: "Este e-mail já está verificado ou não existe." });
+    return res
+      .status(400)
+      .json({ message: "Este e-mail já está verificado ou não existe." });
   }
 
   const verificationToken = crypto.randomBytes(32).toString("hex");
@@ -166,7 +171,6 @@ router.post("/resend-verification", async (req, res) => {
 
   res.status(200).json({ message: "Novo link de verificação enviado!" });
 });
-
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
