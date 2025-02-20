@@ -22,6 +22,11 @@ router.get("/users", async (req, res) => {
 router.post("/register", async (req, res) => {
   try {
     const { email, username, password } = req.body;
+    if (!email || !username || !password) {
+      return res
+        .status(400)
+        .json({ error: "Todos os campos são obrigatórios." });
+    }
 
     const existingUser = await User.findOne({ email });
 
@@ -180,24 +185,28 @@ router.post("/login", async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Credenciais inválidas' });
+      return res.status(400).json({ message: "Credenciais inválidas" });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Credenciais inválidas' });
+      return res.status(400).json({ message: "Credenciais inválidas" });
     }
 
     if (!user.isVerified) {
-      return res.status(400).json({ message: 'Conta não verificada. Verifique seu e-mail.' });
+      return res
+        .status(400)
+        .json({ message: "Conta não verificada. Verifique seu e-mail." });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     res.status(200).json({ token });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Erro interno. Tente novamente.' });
+    res.status(500).json({ message: "Erro interno. Tente novamente." });
   }
 });
 
