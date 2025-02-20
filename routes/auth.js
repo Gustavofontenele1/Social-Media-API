@@ -24,9 +24,7 @@ router.post("/register", async (req, res) => {
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res
-      .status(400)
-      .json({ message: "Já existe uma conta com esse e-mail." });
+    return res.status(400).json({ message: "Já existe uma conta com esse e-mail." });
   }
 
   const existingUsername = await User.findOne({ username });
@@ -35,36 +33,29 @@ router.post("/register", async (req, res) => {
   }
 
   try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationCode = Math.floor(
-      100000 + Math.random() * 900000
-    ).toString();
+    const verificationToken = crypto.randomBytes(32).toString("hex");
 
     const newUser = new User({
       email,
-      password: hashedPassword,
+      password: await bcrypt.hash(password, 10),
       username,
-      verificationCode,
+      verificationToken,
+      verificationTokenExpiry: Date.now() + 3600000,
       isVerified: false,
-      isEmailSent: true, // Marca que o e-mail foi enviado
+      isEmailSent: true,
     });
 
     await newUser.save();
-    await sendVerificationEmail(email, verificationCode);
 
-    res
-      .status(200)
-      .json({
-        message:
-          "Cadastro realizado! Verifique seu e-mail para o código de verificação.",
-      });
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+
+    await sendVerificationEmail(email, verificationUrl);
+
+    res.status(200).json({
+      message: "Cadastro realizado! Verifique seu e-mail para o link de verificação.",
+    });
   } catch (error) {
-    console.error("Erro ao criar o usuário:", error);
-    res
-      .status(500)
-      .json({
-        message: "Erro ao tentar se cadastrar. Tente novamente mais tarde.",
-      });
+    res.status(500).json({ message: "Erro ao tentar se cadastrar. Tente novamente mais tarde." });
   }
 });
 
@@ -128,6 +119,54 @@ router.post("/verify", async (req, res) => {
       .json({ error: "Erro ao verificar código. Tente novamente." });
   }
 });
+
+router.get("/verify/:token", async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const user = await User.findOne({ verificationToken: token });
+
+    if (!user) {
+      return res.status(400).json({ error: "Token inválido ou já utilizado." });
+    }
+
+    if (Date.now() > user.verificationTokenExpiry) {
+      return res.status(400).json({ error: "Token expirado. Solicite um novo link." });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
+    await user.save();
+
+    res.status(200).json({ message: "Conta verificada com sucesso!" });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao verificar a conta." });
+  }
+});
+
+router.post("/resend-verification", async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (!user || user.isVerified) {
+    return res.status(400).json({ message: "Este e-mail já está verificado ou não existe." });
+  }
+
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  user.verificationToken = verificationToken;
+  user.verificationTokenExpiry = Date.now() + 3600000;
+
+  await user.save();
+
+  const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+
+  await sendVerificationEmail(user.email, verificationUrl);
+
+  res.status(200).json({ message: "Novo link de verificação enviado!" });
+});
+
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
