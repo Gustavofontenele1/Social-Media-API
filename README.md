@@ -14,9 +14,7 @@ Este é o repositório do backend do projeto **Social Network**, responsável pe
 
 ## 🔗 API em Produção
 
-O backend está hospedado no Render e pode ser acessado pelo seguinte link:
-
-👉 [Social Network - API](https://social-media-api-0ttk.onrender.com)
+O backend está hospedado no Render.
 
 ## 📌 Funcionalidades
 
