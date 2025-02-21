@@ -47,7 +47,7 @@ async function sendVerificationEmail(email, verificationToken) {
 }
 
 async function sendResetPasswordEmail(email) {
-  try {s
+  try {
     const resetCode = Math.floor(100000 + Math.random() * 900000);
 
     await transporter.sendMail({
