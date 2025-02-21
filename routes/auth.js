@@ -152,24 +152,38 @@ router.get("/verify/:token", async (req, res) => {
 });
 
 router.post("/verify-reset-code", async (req, res) => {
-  const { token } = req.body;
-
   try {
+    const { email, code } = req.body;
+
+    console.log("🔍 Verificando código de redefinição...");
+    console.log("📩 E-mail recebido:", email);
+    console.log("🔑 Código recebido:", code);
+
+    if (!email || !code) {
+      console.log("⚠️ Erro: E-mail ou código não fornecido!");
+      return res.status(400).json({ error: "E-mail e código são obrigatórios" });
+    }
+
     const user = await User.findOne({
-      resetPasswordToken: token,
+      email,
+      resetPasswordToken: code,
       resetPasswordExpires: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Código inválido ou expirado." });
+      console.log("❌ Código inválido ou expirado!");
+      return res.status(400).json({ error: "Código inválido ou expirado" });
     }
 
-    res.status(200).json({ message: "Código válido! Pode redefinir a senha." });
-  } catch (err) {
-    console.error("Erro ao verificar o código de redefinição:", err);
-    res.status(500).json({ message: "Erro interno. Tente novamente." });
+    console.log("✅ Código válido! Prosseguindo com a redefinição de senha...");
+    res.json({ message: "Código verificado com sucesso!" });
+
+  } catch (error) {
+    console.error("🔥 Erro ao verificar código de redefinição:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
+
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
