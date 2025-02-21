@@ -231,15 +231,15 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-    user.resetPasswordToken = resetCode;
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
-    console.log(`📩 Código de redefinição gerado para ${email}: ${resetCode}`);
+    console.log(`📩 Código de redefinição gerado para ${email}: ${resetToken}`);
 
-    const emailSent = await sendResetPasswordEmail(user.email, resetCode);
+    const emailSent = await sendResetPasswordEmail(user.email, resetToken);
 
     if (!emailSent) {
       return res.status(500).json({ error: "Erro ao enviar o e-mail" });
@@ -251,7 +251,6 @@ router.post("/forgot-password", async (req, res) => {
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
-
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
