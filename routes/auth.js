@@ -251,6 +251,7 @@ router.post("/forgot-password", async (req, res) => {
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
+
 router.post("/reset-password", async (req, res) => {
   const { token, newPassword } = req.body;
 
