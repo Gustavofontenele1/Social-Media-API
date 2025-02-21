@@ -89,7 +89,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-
 router.post("/verify", async (req, res) => {
   const { token } = req.body;
   console.log("Token recebido para verificação:", token);
@@ -152,6 +151,26 @@ router.get("/verify/:token", async (req, res) => {
   }
 });
 
+router.post("/verify-reset-code", async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Código inválido ou expirado." });
+    }
+
+    res.status(200).json({ message: "Código válido! Pode redefinir a senha." });
+  } catch (err) {
+    console.error("Erro ao verificar o código de redefinição:", err);
+    res.status(500).json({ message: "Erro interno. Tente novamente." });
+  }
+});
+
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -199,7 +218,7 @@ router.post("/forgot-password", async (req, res) => {
 
     const resetToken = crypto.randomBytes(6).toString("hex");
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; 
+    user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
     const emailSent = await sendResetPasswordEmail(user.email, resetToken);
