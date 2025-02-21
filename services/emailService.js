@@ -69,9 +69,10 @@ async function sendResetPasswordEmail(email, resetToken) {
     });
 
     console.log("E-mail de redefinição de senha enviado para:", email);
+    return true;
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
-    throw new Error("Erro ao enviar e-mail");
+    return false;
   }
 }
 
