@@ -8,6 +8,7 @@ const sendVerificationEmail =
 const sendResetPasswordEmail =
   require("../services/emailService").sendResetPasswordEmail;
 const crypto = require("crypto");
+const cron = require("node-cron");
 const saltRounds = 10;
 
 router.get("/users", async (req, res) => {
@@ -284,6 +285,27 @@ router.post("/reset-password", async (req, res) => {
     console.error("Erro ao redefinir a senha:", err);
     res.status(500).json({ error: err.message });
   }
+});
+
+const removeUnverifiedUsers = async () => {
+  try {
+    const currentTime = Date.now();
+    const result = await User.deleteMany({
+      isVerified: false,
+      verificationTokenExpiry: { $lt: currentTime },
+    });
+
+    console.log(
+      `🗑️ ${result.deletedCount} usuários não verificados foram removidos.`
+    );
+  } catch (error) {
+    console.error("🔥 Erro ao remover usuários não verificados:", error);
+  }
+};
+
+cron.schedule("*/10 * * * * *", async () => {
+  console.log("🔄 Executando limpeza de usuários não verificados...");
+  await removeUnverifiedUsers();
 });
 
 router.delete("/users/:id", async (req, res) => {
