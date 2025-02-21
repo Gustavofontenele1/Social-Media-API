@@ -230,10 +230,13 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const resetToken = crypto.randomBytes(6).toString("hex");
+    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
+
+    console.log(`📩 Código de redefinição gerado para ${email}: ${resetToken}`);
 
     const emailSent = await sendResetPasswordEmail(user.email, resetToken);
 
@@ -243,7 +246,7 @@ router.post("/forgot-password", async (req, res) => {
 
     res.json({ message: "E-mail de redefinição enviado com sucesso!" });
   } catch (error) {
-    console.error("Erro em forgot-password:", error);
+    console.error("🔥 Erro em forgot-password:", error);
     res.status(500).json({ error: "Erro interno no servidor" });
   }
 });
