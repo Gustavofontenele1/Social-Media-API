@@ -89,33 +89,6 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/resend-verification", async (req, res) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email });
-
-  if (!user || user.isVerified) {
-    return res
-      .status(400)
-      .json({ message: "Este e-mail já está verificado ou não existe." });
-  }
-
-  const verificationToken = crypto.randomBytes(32).toString("hex");
-  user.verificationToken = verificationToken;
-  user.verificationTokenExpiry = Date.now() + 3600000;
-
-  await user.save();
-
-  const baseUrl = process.env.FRONTEND_URL.endsWith("/")
-    ? process.env.FRONTEND_URL
-    : `${process.env.FRONTEND_URL}/`;
-
-  const verificationUrl = `${baseUrl}verify/${user.verificationToken}`;
-
-  await sendVerificationEmail(user.email, verificationUrl);
-
-  res.status(200).json({ message: "Novo link de verificação enviado!" });
-});
 
 router.post("/verify", async (req, res) => {
   const { token } = req.body;
