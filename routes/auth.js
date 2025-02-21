@@ -185,7 +185,6 @@ router.post("/verify-reset-code", async (req, res) => {
   }
 });
 
-
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -222,17 +221,16 @@ router.post("/forgot-password", async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ error: "O e-mail é obrigatório" });
+      return res.status(400).json({ error: "O e-mail é obrigatório." });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+      return res.status(404).json({ error: "Usuário não encontrado." });
     }
 
     const resetToken = crypto.randomBytes(6).toString("hex");
-    
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
@@ -242,13 +240,15 @@ router.post("/forgot-password", async (req, res) => {
     const emailSent = await sendResetPasswordEmail(user.email, resetToken);
 
     if (!emailSent) {
-      return res.status(500).json({ error: "Erro ao enviar o e-mail" });
+      return res
+        .status(500)
+        .json({ error: "Erro ao enviar o e-mail de redefinição." });
     }
 
     res.json({ message: "E-mail de redefinição enviado com sucesso!" });
   } catch (error) {
     console.error("🔥 Erro em forgot-password:", error);
-    res.status(500).json({ error: "Erro interno no servidor" });
+    res.status(500).json({ error: "Erro interno no servidor." });
   }
 });
 
