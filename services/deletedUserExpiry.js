@@ -1,30 +1,28 @@
 const User = require("../models/User");
 const cron = require("node-cron");
 
-cron.schedule("*/10 * * * * *", async () => {
-    try {
-      console.log("🔍 Executando limpeza de usuários não verificados...");
-  
-      const expiredUsers = await User.find({
+cron.schedule("0 * * * *", async () => {
+  try {
+    console.log("🔍 Executando limpeza de usuários não verificados...");
+
+    const expiredUsers = await User.find({
+      isVerified: false,
+      verificationTokenExpiry: { $lt: new Date() }
+    });
+
+    if (expiredUsers.length > 0) {
+      console.log(`🗑️ ${expiredUsers.length} usuários serão removidos.`);
+
+      await User.deleteMany({
         isVerified: false,
-        verificationTokenExpiry: { $lt: Date.now() }
+        verificationTokenExpiry: { $lt: new Date() }
       });
-      
-      console.log("🔎 Usuários encontrados para remoção:", expiredUsers);
-  
-      if (expiredUsers.length > 0) {
-        console.log(`🗑️ ${expiredUsers.length} usuários serão removidos.`);
-        
-        await User.deleteMany({
-          isVerified: false,
-          verificationTokenExpiry: { $lt: Date.now() }
-        });
-  
-        console.log("✅ Usuários removidos com sucesso!");
-      } else {
-        console.log("🗑️ Nenhum usuário a remover.");
-      }
-    } catch (error) {
-      console.error("❌ Erro ao remover usuários não verificados:", error);
+
+      console.log("✅ Usuários removidos com sucesso!");
+    } else {
+      console.log("🗑️ Nenhum usuário a remover.");
     }
-  });
+  } catch (error) {
+    console.error("❌ Erro ao remover usuários não verificados:", error);
+  }
+});
