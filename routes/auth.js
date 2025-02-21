@@ -8,7 +8,6 @@ const sendVerificationEmail =
 const sendResetPasswordEmail =
   require("../services/emailService").sendResetPasswordEmail;
 const crypto = require("crypto");
-const cron = require("node-cron");
 const saltRounds = 10;
 
 router.get("/users", async (req, res) => {
@@ -76,14 +75,6 @@ router.post("/register", async (req, res) => {
     res.status(200).json({
       message: "Cadastro realizado com sucesso! Verifique seu e-mail.",
     });
-
-    setTimeout(async () => {
-      const user = await User.findOne({ email });
-      if (user && !user.isVerified) {
-        await User.deleteOne({ email });
-        console.log(`Usuário ${email} removido por falta de verificação.`);
-      }
-    }, 3600000);
   } catch (error) {
     console.error("Erro ao registrar o usuário:", error);
     res.status(500).json({ error: "Erro ao cadastrar usuário." });
@@ -287,26 +278,6 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-const removeUnverifiedUsers = async () => {
-  try {
-    const currentTime = Date.now();
-    const result = await User.deleteMany({
-      isVerified: false,
-      verificationTokenExpiry: { $lt: currentTime },
-    });
-
-    console.log(
-      `🗑️ ${result.deletedCount} usuários não verificados foram removidos.`
-    );
-  } catch (error) {
-    console.error("🔥 Erro ao remover usuários não verificados:", error);
-  }
-};
-
-cron.schedule("*/10 * * * * *", async () => {
-  console.log("🔄 Executando limpeza de usuários não verificados...");
-  await removeUnverifiedUsers();
-});
 
 router.delete("/users/:id", async (req, res) => {
   const { id } = req.params;
