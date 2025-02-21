@@ -211,36 +211,22 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/forgot-password", async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ error: "O email é obrigatório" });
-  }
+  console.log("🔹 Rota /forgot-password chamada");
 
   try {
-    const user = await User.findOne({ email });
+    console.log("🔹 Corpo da requisição:", req.body);
 
-    if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado" });
+    const { email } = req.body;
+    if (!email) {
+      console.log("🔴 Email não informado!");
+      return res.status(400).json({ error: "E-mail obrigatório!" });
     }
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    const resetTokenExpiration = Date.now() + 3600000;
-
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetTokenExpiration;
-
-    await user.save();
-
-    const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
-    await sendResetPasswordEmail(user.email, resetPasswordUrl);
-
-    res
-      .status(200)
-      .json({ message: "E-mail de redefinição de senha enviado." });
-  } catch (err) {
-    console.error("Erro ao solicitar redefinição de senha:", err);
-    res.status(500).json({ error: err.message });
+    console.log("🔹 Tudo certo, processando requisição...");
+    res.json({ message: "Email enviado!" });
+  } catch (error) {
+    console.error("❌ Erro interno:", error);
+    res.status(500).json({ error: "Erro interno do servidor" });
   }
 });
 
