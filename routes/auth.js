@@ -161,7 +161,9 @@ router.post("/verify-reset-code", async (req, res) => {
 
     if (!email || !code) {
       console.log("⚠️ Erro: E-mail ou código não fornecido!");
-      return res.status(400).json({ error: "E-mail e código são obrigatórios" });
+      return res
+        .status(400)
+        .json({ error: "E-mail e código são obrigatórios" });
     }
 
     const user = await User.findOne({
@@ -177,7 +179,6 @@ router.post("/verify-reset-code", async (req, res) => {
 
     console.log("✅ Código válido! Prosseguindo com a redefinição de senha...");
     res.json({ message: "Código verificado com sucesso!" });
-
   } catch (error) {
     console.error("🔥 Erro ao verificar código de redefinição:", error);
     res.status(500).json({ error: "Erro interno no servidor" });
@@ -230,15 +231,15 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    user.resetPasswordToken = resetToken;
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    user.resetPasswordToken = resetCode;
     user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
-    console.log(`📩 Código de redefinição gerado para ${email}: ${resetToken}`);
+    console.log(`📩 Código de redefinição gerado para ${email}: ${resetCode}`);
 
-    const emailSent = await sendResetPasswordEmail(user.email, resetToken);
+    const emailSent = await sendResetPasswordEmail(user.email, resetCode);
 
     if (!emailSent) {
       return res.status(500).json({ error: "Erro ao enviar o e-mail" });

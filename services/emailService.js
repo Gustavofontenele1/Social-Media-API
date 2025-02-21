@@ -46,10 +46,8 @@ async function sendVerificationEmail(email, verificationToken) {
   }
 }
 
-async function sendResetPasswordEmail(email) {
+async function sendResetPasswordEmail(email, resetCode) {
   try {
-    const resetCode = Math.floor(100000 + Math.random() * 900000);
-
     await transporter.sendMail({
       from: '"StreamHub" <no-reply@streamhub.com>',
       to: email,
@@ -66,7 +64,6 @@ async function sendResetPasswordEmail(email) {
     });
 
     console.log("E-mail de redefinição de senha enviado para:", email);
-    return resetCode;
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
     throw new Error("Erro ao enviar e-mail");
