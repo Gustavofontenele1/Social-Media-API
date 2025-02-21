@@ -14,7 +14,8 @@ cron.schedule("*/10 * * * * *", async () => {
 
     const expiredUsers = await User.find({
       isVerified: false,
-      verificationTokenExpiry: { $lt: new Date() }
+      verificationTokenExpiry: { $lt: new Date() },
+      verificationTokenExpiry: { $ne: null }
     });
 
     console.log("Usuários expirados encontrados:", expiredUsers);
@@ -24,7 +25,8 @@ cron.schedule("*/10 * * * * *", async () => {
 
       await User.deleteMany({
         isVerified: false,
-        verificationTokenExpiry: { $lt: new Date() }
+        verificationTokenExpiry: { $lt: new Date() },
+        verificationTokenExpiry: { $ne: null }
       });
 
       console.log("✅ Usuários removidos com sucesso!");
