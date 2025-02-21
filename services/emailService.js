@@ -43,6 +43,7 @@ async function sendVerificationEmail(email, verificationToken) {
     console.log("E-mail enviado para:", email);
   } catch (error) {
     console.error("Erro ao enviar e-mail:", error);
+    res.status(500).json({ error: error.message || "Erro ao enviar o e-mail" });
     if (error.response) {
       console.error("Detalhes do erro:", error.response);
     }
