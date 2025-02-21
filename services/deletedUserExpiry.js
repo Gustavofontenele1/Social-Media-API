@@ -1,7 +1,7 @@
 const User = require("../models/User");
 const cron = require("node-cron");
 
-cron.schedule("0 * * * *", async () => {
+cron.schedule("/10 * * * *", async () => {
   try {
     console.log("🔍 Executando limpeza de usuários não verificados...");
 
