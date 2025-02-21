@@ -231,7 +231,7 @@ router.post("/forgot-password", async (req, res) => {
       return res.status(404).json({ error: "Usuário não encontrado" });
     }
 
-    const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetToken = crypto.randomBytes(6).toString("hex");
     
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000;
