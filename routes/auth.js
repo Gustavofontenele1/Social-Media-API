@@ -179,6 +179,33 @@ router.get("/verify/:token", async (req, res) => {
   }
 });
 
+router.get("/verify/:verificationCode", async (req, res) => {
+  const { verificationCode } = req.params;
+
+  try {
+    const user = await User.findOne({ verificationCode: verificationCode });
+
+    if (!user) {
+      return res.status(400).json({ error: "Código de verificação inválido ou já utilizado." });
+    }
+
+    if (Date.now() > user.verificationCodeExpiry) {
+      return res.status(400).json({ error: "Código expirado. Solicite um novo link." });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = null;
+    user.verificationCodeExpiry = null; 
+    await user.save();
+
+    res.status(200).json({
+      message: "Conta verificada com sucesso! Agora você pode fazer login.",
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Erro ao verificar a conta." });
+  }
+});
+
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
