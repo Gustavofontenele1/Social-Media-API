@@ -35,6 +35,7 @@
 🚀 **bcryptjs**: Utilizado para hash de senhas dos usuários.  
 🚀 **node-cron**: Utilizado para tarefas programadas, como a limpeza de usuários não verificados após um tempo.  
 🚀 **Nodemailer**: Para envio de e-mails (por exemplo, verificação de e-mail de cadastro).
+🚀 **Render**: Plataforma utilizada para hospedar a API de forma confiável e escalável.
 
 ---
 
